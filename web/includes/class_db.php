@@ -70,7 +70,7 @@ class DB_mysql
 	var $querycount = 0;
 	var $last_calc_rows = 0;
 	
-	function DB_mysql($db_addr, $db_user, $db_pass, $db_name, $use_pconnect = false)
+	function __construct($db_addr, $db_user, $db_pass, $db_name, $use_pconnect = false)
 	{
 		$this->db_addr = $db_addr;
 		$this->db_user = $db_user;
@@ -80,23 +80,23 @@ class DB_mysql
 		
 		if ( $use_pconnect )
 		{
-			$this->link = @mysql_pconnect($db_addr, $db_user, $db_pass);
+			$this->link = @mysqli_pconnect($db_addr, $db_user, $db_pass);
 		}
 		else
 		{
-			$this->link = @mysql_connect($db_addr, $db_user, $db_pass);
+			$this->link = @mysqli_connect($db_addr, $db_user, $db_pass);
 		}
 		
 		if ( $this->link )
 		{
-			$q = @mysql_query("SET NAMES 'utf8'", $this->link);
-			@mysql_free_result($q);
+			$q = @mysqli_query($this->link, "SET NAMES 'utf8'");
+			@mysqli_free_result($q);
 			if ( $db_name != '' )
 			{
 				$this->db_name = $db_name;
-				if ( !@mysql_select_db($db_name, $this->link) )
+				if ( !@mysqli_select_db($this->link, $db_name) )
 				{
-					@mysql_close($this->db_connect_id);
+					@mysqli_close($this->db_connect_id);
 					$this->error("Could not select database '$db_name'. Check that the value of DB_NAME in config.php is set correctly.");
 				}
 			}
@@ -116,7 +116,7 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_data_seek($query_id, $row_number);
+			return @mysqli_data_seek($query_id, $row_number);
 		}
 		return false;
 	}
@@ -129,7 +129,7 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_fetch_array($query_id);
+			return @mysqli_fetch_array($query_id);
 		}
 		return false;
 	}
@@ -142,7 +142,7 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_fetch_row($query_id);
+			return @mysqli_fetch_row($query_id);
 		}
 		return false;
 	}
@@ -172,7 +172,7 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_free_result($query_id);
+			return @mysqli_free_result($query_id);
 		}
 		return false;
 	}
@@ -190,7 +190,7 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_num_rows($query_id);
+			return @mysqli_num_rows($query_id);
 		}
 		return false;
 	}
@@ -209,15 +209,16 @@ class DB_mysql
 			/* Add sql_calc_found_rows to this query */
 			$query = preg_replace('/select/i', 'select sql_calc_found_rows', $query, 1);
 		}
-		$this->last_result = @mysql_query($query, $this->link);
+		$this->last_result = @mysqli_query($this->link, $query);
 		$endtime = microtime(true);
 		
-		$this->last_insert_id = @mysql_insert_id($this->link);
+		$this->last_insert_id = @mysqli_insert_id($this->link);
 		
 		if($calcrows == true) 
 		{
-			$calc_result = @mysql_query("select found_rows() as rowcount");
-			if($row = mysql_fetch_assoc($calc_result)) 
+			// ADDED link, WASN'T THERE BEFORE
+			$calc_result = @mysqli_query($this->link, "select found_rows() as rowcount");
+			if($row = mysqli_fetch_assoc($calc_result)) 
 			{
 				$this->last_calc_rows = $row['rowcount'];
 			}
@@ -238,7 +239,7 @@ class DB_mysql
 				$profilequery = "insert into hlstats_sql_web_profile (source, run_count, run_time) values ".
 					"('".basename($backtrace[0]['file']).':'.$backtrace[0]['line']."',1,'".($endtime-$starttime)."')"
 					."ON DUPLICATE KEY UPDATE run_count = run_count+1, run_time=run_time+".($endtime-$starttime);
-				@mysql_query($profilequery, $this->link);
+				@mysqli_query($this->link, $profilequery);
 			}
 			return $this->last_result;
 		}
@@ -263,23 +264,33 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			return @mysql_result($query_id, $row, $field);
+			//return @mysql_result($query_id, $row, $field);
+			mysql_data_seek($query_id, $row);
+			if (!empty($field)) {
+				while($finfo = mysqli_fetch_field( $query_id )) {
+					if( $field == $finfo->name) {
+						$f = mysqli_fetch_assoc( $result );
+						$fetch = $f[ $field ];
+					}
+				}
+			} else {
+				$f = mysqli_fetch_array( $result );
+				$fetch = $f[0];
+			}
 		}
 		return false;
 	}
 	
 	function escape($string)
 	{
-		if ( $this->link )
-		{
-			return @mysql_real_escape_string($string, $this->link);
-		}
-		else
-		{
-			return @mysql_real_escape_string($string);
-		}
+		return @mysqli_real_escape_string($this->link, $string);
 	}
 	
+	function get_link()
+	{
+		return $this->link;
+	}
+
 	function error($message, $exit=true)
 	{
 		error(
@@ -287,7 +298,7 @@ class DB_mysql
 			"<i>Server Address:</i> $this->db_addr<br />\n" .
 			"<i>Server Username:</i> $this->db_user<br /><br />\n" .
 			"<i>Error Diagnostic:</i><br />\n$message<br /><br />\n" .
-			"<i>Server Error:</i> (" . @mysql_errno() . ") " . @mysql_error() . "<br /><br />\n" .
+			"<i>Server Error:</i> (" . @mysqli_errno() . ") " . @mysqli_error() . "<br /><br />\n" .
 			"<i>Last SQL Query:</i><br />\n<pre style=\"font-size:2px;\">$this->last_query</pre>",
 			$exit
 		);

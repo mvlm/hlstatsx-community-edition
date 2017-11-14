@@ -67,6 +67,7 @@ For support and installation notes visit http://www.hlxcommunity.com
 ?>
 
 <?php
+  $link = $db->get_link();
   if (isset($_GET['hostgroup']))
 	{
          
@@ -110,7 +111,7 @@ For support and installation notes visit http://www.hlxcommunity.com
 			FROM
 				hlstats_Events_Connects
 			WHERE
-				hostgroup='".mysql_real_escape_string($hostgroup)."'
+				hostgroup='".mysqli_real_escape_string($link, $hostgroup)."'
 		");
 		
 		list($totalconnects, $numitems) = $db->fetch_row($result);
@@ -123,7 +124,7 @@ For support and installation notes visit http://www.hlxcommunity.com
 			FROM
 				hlstats_Events_Connects
 			WHERE
-				hostgroup='".mysql_real_escape_String($hostgroup)."'
+				hostgroup='".mysqli_real_escape_String($link, $hostgroup)."'
 			GROUP BY
 				host
 			ORDER BY

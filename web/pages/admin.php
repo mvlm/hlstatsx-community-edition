@@ -862,6 +862,7 @@ class PropertyPage
 	function update()
 	{
 		global $db;
+		$link = $db->link;
 
 		$setstrings = array();
 		foreach ($this->propertygroups as $group)
@@ -889,7 +890,7 @@ class PropertyPage
 				SET
 					" . implode(",\n", $setstrings) . "
 				WHERE
-					" . $this->keycol . "='" . mysql_real_escape_string($this->keyval) . "'
+					" . $this->keycol . "='" . mysqli_real_escape_string($link, $this->keyval) . "'
 			");
 	}
 }

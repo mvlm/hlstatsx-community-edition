@@ -67,7 +67,7 @@ class Table
 	var $maxpagenumbers = 20;
 
 
-	function Table ($columns, $keycol, $sort_default, $sort_default2,
+	function __construct($columns, $keycol, $sort_default, $sort_default2,
 	                $showranking=false, $numperpage=50, $var_page='page',
 	                $var_sort='sort', $var_sortorder='sortorder', $sorthash='',
 	                $sort_default_order='desc', $ajax = false)
@@ -526,7 +526,7 @@ class TableColumn
 	var $embedlink = 'no';
 	var $flag;    
 
-	function TableColumn ($name, $title, $attrs="", $fname=null)
+	function __construct($name, $title, $attrs="", $fname=null)
 	{
 		$this->name = $name;
 		$this->title= $title;

@@ -47,6 +47,8 @@ if ($auth->userdata['acclevel'] < 80)
 
 <?php
 
+    $link = $db->get_link();
+
     if (isset($_POST['confirm']))
     {
 		$convert_to   = 'utf8_general_ci';
@@ -55,12 +57,12 @@ if ($auth->userdata['acclevel'] < 80)
 		if ($_POST['printonly'] > 0) {
 			echo '<strong>Run these statements against your MySql database</strong><br><br>';
 			echo "ALTER DATABASE `".DB_NAME."` DEFAULT CHARACTER SET $character_set COLLATE $convert_to;<br>";
-			$rs_tables = $db->query('SHOW TABLES') or die(mysql_error());
+			$rs_tables = $db->query('SHOW TABLES') or die(mysqli_error($link));
 			while ($row_tables = $db->fetch_row($rs_tables))
 			{
-				$table = mysql_real_escape_string($row_tables[0]);
+				$table = mysql_real_escape_string($link, $row_tables[0]);
 				echo "ALTER TABLE `$table` DEFAULT CHARACTER SET $character_set;<br>";
-				$rs = $db->query("SHOW FULL FIELDS FROM `$table` WHERE collation is not null AND collation <> 'utf8_general_ci'") or die(mysql_error());
+				$rs = $db->query("SHOW FULL FIELDS FROM `$table` WHERE collation is not null AND collation <> 'utf8_general_ci'") or die(mysqli_error($link));
 				while ($row=mysql_fetch_assoc($rs))
 				{
 					if ($row['Collation'] == '')
@@ -74,11 +76,11 @@ if ($auth->userdata['acclevel'] < 80)
 					else if ( $row['Default'] === NULL )
 						$default = ' DEFAULT NULL';
 					else if ($row['Default']!='')
-						$default = " DEFAULT '".mysql_real_escape_string($row['Default'])."'";
+						$default = " DEFAULT '".mysql_real_escape_string($link, $row['Default'])."'";
 					else
 						$default = '';
 					
-					$field = mysql_real_escape_string($row['Field']);
+					$field = mysql_real_escape_string($link, $row['Field']);
 					echo "ALTER TABLE `$table` CHANGE `$field` `$field` $row[Type] CHARACTER SET $character_set COLLATE $convert_to $nullable $default;<br>";
 				}
 			}
@@ -86,17 +88,17 @@ if ($auth->userdata['acclevel'] < 80)
 			echo "Converting database, table, and row collations to utf8:<ul>\n";
 			set_time_limit(0);	
 			echo '<li>Changing '.DB_NAME.' default character set and collation... ';
-			$db->query("ALTER DATABASE `".DB_NAME."` DEFAULT CHARACTER SET $character_set COLLATE $convert_to;")or die(mysql_error());
+			$db->query("ALTER DATABASE `".DB_NAME."` DEFAULT CHARACTER SET $character_set COLLATE $convert_to;")or die(mysqli_error($link));
 			echo 'OK';
-			$rs_tables = $db->query('SHOW TABLES') or die(mysql_error());
+			$rs_tables = $db->query('SHOW TABLES') or die(mysqli_error($link));
 			while ($row_tables = $db->fetch_row($rs_tables))
 			{
-				$table = mysql_real_escape_string($row_tables[0]);
+				$table = mysql_real_escape_string($link, $row_tables[0]);
 				echo "<li>Converting Table: $table ... ";
 				$db->query("ALTER TABLE `$table` DEFAULT CHARACTER SET $character_set;");
 				echo 'OK';
 				$rs = $db->query("SHOW FULL FIELDS FROM `$table` WHERE collation is not null AND collation <> 'utf8_general_ci'") or die(mysql_error());
-				while ($row=mysql_fetch_assoc($rs))
+				while ($row=mysqli_fetch_assoc($rs))
 				{
 					if ($row['Collation'] == '')
 						continue;
@@ -109,11 +111,11 @@ if ($auth->userdata['acclevel'] < 80)
 					else if ( $row['Default'] === NULL )
 						$default = ' DEFAULT NULL';
 					else if ($row['Default']!='')
-						$default = " DEFAULT '".mysql_real_escape_string($row['Default'])."'";
+						$default = " DEFAULT '".mysqli_real_escape_string($link, $row['Default'])."'";
 					else
 						$default = '';
 					
-					$field = mysql_real_escape_string($row['Field']);
+					$field = mysqli_real_escape_string($link, $row['Field']);
 					echo "<li>Converting Table: $table   Column: $field ... ";
 					$db->query("ALTER TABLE `$table` CHANGE `$field` `$field` $row[Type] CHARACTER SET $character_set COLLATE $convert_to $nullable $default;");
 					echo 'OK';
