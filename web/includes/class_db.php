@@ -216,7 +216,6 @@ class DB_mysql
 		
 		if($calcrows == true) 
 		{
-			// ADDED link, WASN'T THERE BEFORE
 			$calc_result = @mysqli_query($this->link, "select found_rows() as rowcount");
 			if($row = mysqli_fetch_assoc($calc_result)) 
 			{
@@ -264,7 +263,6 @@ class DB_mysql
 		}
 		if ( $query_id )
 		{
-			//return @mysql_result($query_id, $row, $field);
 			mysql_data_seek($query_id, $row);
 			if (!empty($field)) {
 				while($finfo = mysqli_fetch_field( $query_id )) {
