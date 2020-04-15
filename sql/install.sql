@@ -4,6 +4,7 @@
 
 SET @DBVERSION="78";
 SET @VERSION="1.6.19";
+SET sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''));
 
 -- --------------------------------------------------------
 

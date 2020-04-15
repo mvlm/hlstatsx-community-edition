@@ -1,0 +1,57 @@
+version: "3.7"
+
+x-anchors:
+  - &logs
+    logging:
+      driver: json-file
+      options:
+        max-file: '5'
+        max-size: 20m
+
+volumes:
+  mysql-data: 
+
+services:
+  mysql:
+    image: mysql:5.7.29
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_USER: "hlstats"
+      MYSQL_PASSWORD:
+      MYSQL_DATABASE: "hlstats"
+    restart: unless-stopped
+    <<: *logs
+
+  nginx:
+    image: mvlm/hlxce:nginx-latest
+    build:
+      context: .
+      dockerfile: dockerfiles/nginx.dockerfile
+    restart: unless-stopped
+    ports:
+      - ${WWW_PORT}:80
+    <<: *logs
+
+  php:
+    image: mvlm/hlxce:php-latest
+    environment:
+      DB_ADDR: "mysql"
+      DB_USER: "hlstats"
+      DB_PASS: ${MYSQL_PASSWORD}
+      DB_NAME: "hlstats"
+    restart: unless-stopped
+    <<: *logs
+
+  daemon:
+    image: mvlm/hlxce:daemon-latest
+    environment:
+      DB_ADDR: "mysql"
+      DB_USER: "hlstats"
+      DB_PASS: ${MYSQL_PASSWORD}
+      DB_NAME: "hlstats"
+    ports: 
+      - ${DAEMON_LISTEN_IP:-0.0.0.0}:${DAEMON_PORT:-27500}:27500/udp
+    restart: unless-stopped
+    <<: *logs

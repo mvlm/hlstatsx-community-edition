@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+sed -i "/DBHost/s/\"\([^\"]*\)\"/\"${DB_ADDR}\"/g" /home/hlxce/hlstats.conf
+sed -i "/DBUsername/s/\"\([^\"]*\)\"/\"${DB_USER}\"/g" /home/hlxce/hlstats.conf
+sed -i "/DBPassword/s/\"\([^\"]*\)\"/\"${DB_PASS}\"/g" /home/hlxce/hlstats.conf
+sed -i "/DBName/s/\"\([^\"]*\)\"/\"${DB_NAME}\"/g" /home/hlxce/hlstats.conf
+
+crontab /root/daemon.txt
+su-exec hlxce /home/hlxce/run_hlstats start
+
+"$@"
